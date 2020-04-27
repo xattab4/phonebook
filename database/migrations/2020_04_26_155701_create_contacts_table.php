@@ -23,7 +23,7 @@ class CreateContactsTable extends Migration
         Schema::create('contact_phons', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('contact_id')->unsigned();
-            $table->string('phone', 13);
+            $table->string('phone', 20);
 
             $table->foreign('contact_id')->references('id')->on('contacts')->onDelete('cascade');    
         });

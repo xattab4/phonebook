@@ -1,5 +1,9 @@
 <template>
     <div class="contacts mb-5">
+        <a href="" class="btn btn-success mb-3 float-right" data-toggle="modal" data-target="#create"><i class="fa fa-plus"></i> Добавить контакт</a>
+
+        <div class="clearfix"></div>
+
         <ul v-if="contacts" class="card">
             <li v-for="({ id, first_name, last_name, phons }, index) in contacts" v-bind:key="index">
                 <div class="row">
@@ -16,6 +20,61 @@
                 </div>
             </li>
         </ul>
+
+        <!-- create --> 
+        <div class="modal fade" id="create" tabindex="-1" role="dialog" aria-labelledby="createLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createLabel">Новый контакт</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-for="error in errors" v-bind:key="error" class="alert alert-danger">
+                            {{ error[0] }}
+                        </div>
+
+                        <div class="form-row">
+                            <div class="col">
+                                <input type="text" class="form-control" placeholder="Имя" v-model="nContact.first_name">
+                            </div>
+                            <div class="col">
+                                <input type="text" class="form-control" placeholder="Фамилия" v-model="nContact.last_name">
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3" v-for="({phone}, index) in nContact.phons" v-bind:key="index">
+                            <div class="col-11">
+                                <vue-phone-number-input 
+                                    :id="'contactPhone'+index"
+                                    @update="validationPhone;"
+                                    default-country-code="UA" 
+                                    :required="true" 
+                                    :no-country-selector="true"
+                                    :translations="{
+                                        countrySelectorLabel: 'Код страны',
+                                        countrySelectorError: 'Выберите страну',
+                                        phoneNumberLabel: 'Номер телефона',
+                                        example: 'Пример :'
+                                    }"
+                                    v-model="nContact.phons[index].phone" />
+                            </div>
+                            <div class="col-1">
+                                <button type="submit" class="btn btn-sm btn-link mt-1" @click="nContact.phons.splice(index, 1)"><i class="fa fa-trash"></i></button>
+                            </div>                        
+                        </div>
+
+                        <a href="javascript:void(0);" class="btn btn-success mt-3" @click="nContact.phons.push({'phone': ''})"><i class="fa fa-plus"></i> Добавить номер</a>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-success" @click="store();">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- edit -->
         <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="editTitle" aria-hidden="true">
@@ -58,7 +117,7 @@
                                     v-model="currentContact.phons[index].phone" />
                             </div>
                             <div class="col-1">
-                                <button type="submit" class="btn btn-sm btn-outline-danger mt-1" @click="currentContact.phons.splice(index, 1)"><i class="fa fa-trash"></i></button>
+                                <button type="submit" class="btn btn-sm btn-link mt-1" @click="currentContact.phons.splice(index, 1)"><i class="fa fa-trash"></i></button>
                             </div>                        
                         </div>
 
@@ -128,8 +187,16 @@ export default {
     data() {
         return {
             errors: [],
+            // Список
             contacts: [],
-            currentContact: []
+            // Текущий
+            currentContact: [],
+            // Новый
+            nContact: {
+                first_name: null,
+                last_name:  null,
+                phons: []
+            }
         }
     },
     created() {
@@ -146,6 +213,20 @@ export default {
                 .get('/contacts')
                 .then(response => {
                     this.contacts = response.data.data;
+                });
+        },
+        store() {
+            this.errors = [];
+
+            this.axios
+                .post('/contacts/store/', this.nContact)
+                .then((response) => {
+                    this.contacts.unshift(this.nContact);
+
+                    $('#create').modal('hide');
+                })
+                .catch((e) => {
+                    this.errors = e.response.data.errors || 'Ошибка при создании контакта.';
                 });
         },
         update() {

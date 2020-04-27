@@ -27,6 +27,9 @@ class ContactRequest extends FormRequest
             'first_name' => 'required|min:3|max:255',
             'last_name' => 'nullable',
             'phons' => 'array'
+
+            // Можно еще пробежать по массиву phons и проверить на заполненность,
+            // длину телефона и вернуть ошибку если не валид 
         ]; 
     }
 }

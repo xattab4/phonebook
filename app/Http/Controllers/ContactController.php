@@ -17,7 +17,7 @@ class ContactController extends Controller
      */
     public function index()
     {
-        return ContactResource::collection(Contact::all());
+        return ContactResource::collection(Contact::orderBy('created_at', 'DESC')->get());
     }
 
     /**
@@ -28,7 +28,15 @@ class ContactController extends Controller
      */
     public function store(ContactRequest $request)
     {
-        //
+        $contact = new Contact;
+        $contact->first_name = $request->first_name;
+        $contact->last_name = $request->last_name;
+        $contact->save();
+
+        // Теперь наполним список телефонов
+        $contact->phons()->createMany($request->phons);
+
+        return response()->json('Контакт успешно обновлен');
     }
 
     /**
@@ -48,9 +56,11 @@ class ContactController extends Controller
         // Удалим все контакты и запишем новые
         // Хотя бумаю, что лучше сделать какую-то функцию типа sync
         $contact->phons()->delete();
-
-        // Теперь наполним список
-        $contact->phons()->createMany($request->phons);
+        
+        if (!empty($request->phons)) {
+            // Теперь наполним список
+            $contact->phons()->createMany($request->phons);
+        }
 
         return response()->json('Контакт успешно обновлен');
     }
